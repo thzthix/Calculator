@@ -98,14 +98,20 @@ function handleSymbolClicked(event) {
     } calculateNum2:${currentState.calculateNum2}`
   );
 
-  if (currentState.calculateNum2) {
+  if (currentState.previousSymbol) {
+    console.log("me/!!");
     currentState.calculateNum1 = calculateExpression(
       currentState.calculateNum1,
       currentState.calculateNum2,
       currentState.previousSymbol
     );
+
     currentState.currentSymbol = clickedSymbol;
     currentState.previousSymbol = "";
+    currentState.calculateNum2 = "";
+    currentState.numericAfterSymbolClicked = false;
+    displayNum(currentState.calculateNum1, true);
+    return;
   }
   if (currentState.numericAfterSymbolClicked) {
     currentState.calculateNum2 = displayNumericInput.textContent;
@@ -118,11 +124,11 @@ function handleSymbolClicked(event) {
     );
     currentState.currentSymbol = clickedSymbol;
     currentState.previousSymbol = "";
+    displayNum(currentState.calculateNum1, true);
   }
   currentState.numericAfterSymbolClicked = false;
   currentState.calculateNum2 = "";
 }
-
 function handleNumericClicked(event) {
   const clickedNumber = buttonValues[`${event.target.id}`];
   if (currentState.symbolClicked) {
@@ -138,25 +144,13 @@ function handleNumericClicked(event) {
 
 function handleModifyNumricClicked(event) {
   if (event.target.id === "percent") {
-    const percentage = Number(currentState.calculateNum1) / 100;
-    const num2 = displayNumericInput.textContent;
-    console.log(`percentage:${percentage}`);
     currentState.previousSymbol = currentState.currentSymbol;
-    currentState.currentSymbol = "*";
-    const result = calculateExpression(
-      percentage,
-      num2,
-      currentState.currentSymbol
-    );
-
-    currentState.calculateNum2 = result;
-    console.log(`result:${result}`);
-    displayNum(currentState.calculateNum2, true);
-
-    currentState.currentSymbol = currentState.previousSymbol;
+    const percentage = Number(displayNumericInput.textContent) / 100;
+    const currentNum = currentState.calculateNum1;
+    const result = calculateExpression(currentNum, percentage, "*");
+    displayNum(result, true);
     currentState.numericAfterSymbolClicked = true;
-
-    storeNumbers();
+    currentState.calculateNum2 = result; // save result to calculateNum1
   } else if (event.target.id === "enter-sign") {
     displayNum((Number(displayNumericInput.textContent) * -1).toString(), true);
     storeNumbers();
@@ -203,3 +197,4 @@ const modifyNumericButtons = document.getElementsByClassName("modify");
 Array.prototype.forEach.call(modifyNumericButtons, (button) => {
   button.addEventListener("click", handleModifyNumricClicked);
 });
+
