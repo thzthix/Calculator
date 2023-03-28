@@ -17,6 +17,7 @@ const currentState = {
   previousSymbol: "",
   symbolClicked: false,
   numericAfterSymbolClicked: false,
+  decimalpointClicked: false,
 };
 
 const buttonValues = {
@@ -38,6 +39,14 @@ const buttonValues = {
   nine: "9",
   zero: "0",
 };
+function handleDisplayExperssion() {
+  console.log("i callll");
+  if (currentState.calculateNum2) {
+    disPlayExpression.textContent = `${currentState.calculateNum1}${currentState.currentSymbol}${currentState.calculateNum2}`;
+  } else {
+    disPlayExpression.textContent = `${currentState.calculateNum1}${currentState.currentSymbol}`;
+  }
+}
 function calculateExpression(num1, num2, symbol) {
   num1 = Number(num1);
   num2 = Number(num2);
@@ -68,6 +77,16 @@ function calculateExpression(num1, num2, symbol) {
   return result;
 }
 function displayNum(num, modify) {
+  if (
+    displayNumericInput.textContent.length > 0 &&
+    displayNumericInput.textContent.charAt(0) === "0" &&
+    displayNumericInput.textContent.charAt(1) !== "."
+  ) {
+    console.log("iti ssatisfied");
+    console.log(displayNumericInput.textContent);
+    // displayNumericInput.textContent =
+    //   displayNumericInput.textContent.substring(1);
+  }
   if (!modify) {
     displayNumericInput.textContent += num;
   } else if (modify) {
@@ -89,6 +108,7 @@ function handleSymbolClicked(event) {
       currentState.calculateNum1 = displayNumericInput.textContent;
     }
     currentState.currentSymbol = clickedSymbol;
+    handleDisplayExperssion();
     return;
   }
 
@@ -111,6 +131,7 @@ function handleSymbolClicked(event) {
     currentState.calculateNum2 = "";
     currentState.numericAfterSymbolClicked = false;
     displayNum(currentState.calculateNum1, true);
+    handleDisplayExperssion();
     return;
   }
   if (currentState.numericAfterSymbolClicked) {
@@ -128,9 +149,20 @@ function handleSymbolClicked(event) {
   }
   currentState.numericAfterSymbolClicked = false;
   currentState.calculateNum2 = "";
+  handleDisplayExperssion();
+  currentState.decimalpointClicked = false;
 }
 function handleNumericClicked(event) {
   const clickedNumber = buttonValues[`${event.target.id}`];
+
+  if (event.target.id === "decimalpoint") {
+    if (currentState.decimalpointClicked) {
+      return;
+    } else {
+      currentState.decimalpointClicked = true;
+    }
+  }
+
   if (currentState.symbolClicked) {
     currentState.numericAfterSymbolClicked = true;
     displayNumericInput.textContent = "";
@@ -144,16 +176,39 @@ function handleNumericClicked(event) {
 
 function handleModifyNumricClicked(event) {
   if (event.target.id === "percent") {
-    currentState.previousSymbol = currentState.currentSymbol;
     const percentage = Number(displayNumericInput.textContent) / 100;
-    const currentNum = currentState.calculateNum1;
+    currentState.decimalpointClicked = false;
+    const currentNum = currentState.calculateNum1
+      ? currentState.calculateNum1
+      : 0;
     const result = calculateExpression(currentNum, percentage, "*");
+    currentState.calculateNum2 = result;
     displayNum(result, true);
-    currentState.numericAfterSymbolClicked = true;
+    handleDisplayExperssion();
+    if (currentState.previousSymbol) {
+      currentState.previousSymbol = currentState.currentSymbol;
+    } else {
+      return;
+    }
+
+    currentState.numericAfterSymbolClicked = true; //fix it
     currentState.calculateNum2 = result; // save result to calculateNum1
   } else if (event.target.id === "enter-sign") {
+    //fix -031+???
+    //fix -3+-3/1, not -3+-31
     displayNum((Number(displayNumericInput.textContent) * -1).toString(), true);
-    storeNumbers();
+
+    if (!currentState.currentSymbol) {
+      console.log("idksldjlakj");
+      currentState.calculateNum1 = displayNumericInput.textContent;
+    } else {
+      currentState.calculateNum2 = displayNumericInput.textContent;
+    }
+    currentState.decimalpointClicked = false;
+    console.log(
+      `num1:${currentState.calculateNum1},num2:${currentState.calculateNum2}`
+    );
+    handleDisplayExperssion();
   }
 }
 
@@ -197,4 +252,3 @@ const modifyNumericButtons = document.getElementsByClassName("modify");
 Array.prototype.forEach.call(modifyNumericButtons, (button) => {
   button.addEventListener("click", handleModifyNumricClicked);
 });
-
