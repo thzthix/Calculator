@@ -17,6 +17,8 @@ const currentState = {
   previousSymbol: "",
   symbolClicked: false,
   numericAfterSymbolClicked: false,
+  decimalpointClicked: false,
+  negateClicked: false,
 };
 
 const buttonValues = {
@@ -75,17 +77,20 @@ function calculateExpression(num1, num2, symbol) {
   displayResult();
   return result;
 }
-function displayNum(num, modify) {
+function displayNum(num, modify, equal) {
   if (
     displayNumericInput.textContent.length > 0 &&
-    displayNumericInput.textContent.charAt(0) === "0"
+    displayNumericInput.textContent.charAt(0) === "0" &&
+    !currentState.decimalpointClicked
   ) {
+    console.log("iti ssatisfied");
+    console.log(displayNumericInput.textContent);
     displayNumericInput.textContent =
       displayNumericInput.textContent.substring(1);
   }
-  if (!modify) {
+  if (!modify && !equal) {
     displayNumericInput.textContent += num;
-  } else if (modify) {
+  } else if (modify || equal) {
     displayNumericInput.textContent = num;
   }
 }
@@ -97,9 +102,12 @@ function storeNumbers() {
   }
 }
 function handleSymbolClicked(event) {
+  currentState.decimalpointClicked = false;
   currentState.symbolClicked = true;
+  currentState.calculateNum2 = "";
   const clickedSymbol = buttonValues[`${event.target.id}`];
   if (!currentState.numericAfterSymbolClicked) {
+    console.log("here!");
     if (currentState.calculateNum1 === "0") {
       currentState.calculateNum1 = displayNumericInput.textContent;
     }
@@ -126,7 +134,7 @@ function handleSymbolClicked(event) {
     currentState.previousSymbol = "";
     currentState.calculateNum2 = "";
     currentState.numericAfterSymbolClicked = false;
-    displayNum(currentState.calculateNum1, true);
+    displayNum(currentState.calculateNum1, true, false);
     handleDisplayExperssion();
     return;
   }
@@ -141,7 +149,7 @@ function handleSymbolClicked(event) {
     );
     currentState.currentSymbol = clickedSymbol;
     currentState.previousSymbol = "";
-    displayNum(currentState.calculateNum1, true);
+    displayNum(currentState.calculateNum1, true, false);
   }
   currentState.numericAfterSymbolClicked = false;
   currentState.calculateNum2 = "";
@@ -150,26 +158,36 @@ function handleSymbolClicked(event) {
 function handleNumericClicked(event) {
   const clickedNumber = buttonValues[`${event.target.id}`];
 
+  if (event.target.id === "decimalpoint") {
+    currentState.symbolClicked = false;
+    if (currentState.decimalpointClicked) {
+      return;
+    } else {
+      currentState.decimalpointClicked = true;
+    }
+  }
+
   if (currentState.symbolClicked) {
+    currentState.negateClicked = false;
     currentState.numericAfterSymbolClicked = true;
     displayNumericInput.textContent = "";
     displayNumericInput.textContent = buttonValues[event.target.id];
     currentState.symbolClicked = false;
     return;
   }
-  displayNum(clickedNumber, false);
+  displayNum(clickedNumber, false, false);
   currentState.symbolClicked = false;
 }
-
 function handleModifyNumricClicked(event) {
   if (event.target.id === "percent") {
     const percentage = Number(displayNumericInput.textContent) / 100;
+    currentState.decimalpointClicked = false;
     const currentNum = currentState.calculateNum1
       ? currentState.calculateNum1
       : 0;
     const result = calculateExpression(currentNum, percentage, "*");
     currentState.calculateNum2 = result;
-    displayNum(result, true);
+    displayNum(result, true, false);
     handleDisplayExperssion();
     if (currentState.previousSymbol) {
       currentState.previousSymbol = currentState.currentSymbol;
@@ -180,20 +198,38 @@ function handleModifyNumricClicked(event) {
     currentState.numericAfterSymbolClicked = true; //fix it
     currentState.calculateNum2 = result; // save result to calculateNum1
   } else if (event.target.id === "enter-sign") {
-    //fix -031+???
-    //fix -3+-3/1, not -3+-31
-    displayNum((Number(displayNumericInput.textContent) * -1).toString(), true);
+    if (displayNumericInput.textContent === "0") {
+      currentState.negateClicked = false;
+      return;
+    } else if (!currentState.negateClicked) {
+      displayNumericInput.textContent =
+        buttonValues["enter-sign"] + displayNumericInput.textContent;
 
-    if (!currentState.currentSymbol) {
-      console.log("idksldjlakj");
-      currentState.calculateNum1 = displayNumericInput.textContent;
-    } else {
-      currentState.calculateNum2 = displayNumericInput.textContent;
+      currentState.negateClicked = true;
+    } else if (currentState.negateClicked) {
+      displayNumericInput.textContent = displayNumericInput.textContent.replace(
+        buttonValues["enter-sign"],
+        ""
+      );
+      currentState.negateClicked = false;
     }
+
+    // displayNum(
+    //   (Number(displayNumericInput.textContent) * -1).toString(),
+    //   true,
+    //   false
+    // );
+
+    // if (!currentState.currentSymbol) {
+    //   console.log("idksldjlakj");
+    //   currentState.calculateNum1 = displayNumericInput.textContent;
+    // } else {
+    //   currentState.calculateNum2 = displayNumericInput.textContent;
+    // }
+    currentState.decimalpointClicked = false;
     console.log(
       `num1:${currentState.calculateNum1},num2:${currentState.calculateNum2}`
     );
-    handleDisplayExperssion();
   }
 }
 
@@ -201,13 +237,25 @@ function displayResult() {
   displayNumericInput.textContent = currentState.calculateNum1.toString();
 }
 function onClickEqual() {
-  currentState.calculateNum2 = displayNumericInput.textContent;
-  if (currentState.numericAfterSymbolClicked) {
+  if (currentState.currentSymbol) {
+    currentState.calculateNum2 = currentState.calculateNum2
+      ? currentState.calculateNum2
+      : displayNumericInput.textContent;
+    handleDisplayExperssion();
     currentState.calculateNum1 = calculateExpression(
+      currentState.calculateNum1,
+      currentState.calculateNum2,
       currentState.currentSymbol
     );
-    numericAfterSymbolClicked = false;
+    // currentState.calculateNum2 = "";
+  } else {
+    handleDisplayExperssion();
+    currentState.calculateNum1 = displayNumericInput.textContent;
   }
+
+  displayNum(currentState.calculateNum1, false, true);
+
+  currentState.numericAfterSymbolClicked = false;
 }
 equalButton.addEventListener("click", onClickEqual);
 function resetDisplayPanel(event) {
@@ -237,3 +285,5 @@ const modifyNumericButtons = document.getElementsByClassName("modify");
 Array.prototype.forEach.call(modifyNumericButtons, (button) => {
   button.addEventListener("click", handleModifyNumricClicked);
 });
+displayNum(currentState.calculateNum1, false, false);
+
