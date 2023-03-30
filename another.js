@@ -1,4 +1,4 @@
-// TODO: update displaying expression
+
 const calculatorContainer = document.getElementById("calculator-container");
 const displayPanel = document.getElementById("display-panel");
 const disPlayExpression = document.getElementById("display-expression");
