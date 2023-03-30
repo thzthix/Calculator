@@ -1,3 +1,4 @@
+// TODO: update displaying expression
 const calculatorContainer = document.getElementById("calculator-container");
 const displayPanel = document.getElementById("display-panel");
 const disPlayExpression = document.getElementById("display-expression");
@@ -19,6 +20,8 @@ const currentState = {
   numericAfterSymbolClicked: false,
   decimalpointClicked: false,
   negateClicked: false,
+  equalClicked: false,
+  error: false,
 };
 
 const buttonValues = {
@@ -39,13 +42,23 @@ const buttonValues = {
   eight: "8",
   nine: "9",
   zero: "0",
+  equal: "=",
 };
 function handleDisplayExperssion() {
-  console.log("i callll");
-  if (currentState.calculateNum2) {
-    disPlayExpression.textContent = `${currentState.calculateNum1}${currentState.currentSymbol}${currentState.calculateNum2}`;
-  } else {
+  if (currentState.error) {
+    disPlayExpression.textContent = "Cannot be divided by zero.";
+    return;
+  }
+  if (!currentState.currentSymbol) {
+    disPlayExpression.textContent = `${currentState.calculateNum1}`;
+  } else if (!currentState.calculateNum2) {
     disPlayExpression.textContent = `${currentState.calculateNum1}${currentState.currentSymbol}`;
+  } else {
+    disPlayExpression.textContent = `${currentState.calculateNum1}${currentState.currentSymbol}${currentState.calculateNum2}`;
+  }
+
+  if (currentState.equalClicked) {
+    disPlayExpression.textContent += buttonValues["equal"];
   }
 }
 function calculateExpression(num1, num2, symbol) {
@@ -102,10 +115,12 @@ function storeNumbers() {
   }
 }
 function handleSymbolClicked(event) {
+  currentState.equalClicked = false;
   currentState.decimalpointClicked = false;
   currentState.symbolClicked = true;
   currentState.calculateNum2 = "";
   const clickedSymbol = buttonValues[`${event.target.id}`];
+
   if (!currentState.numericAfterSymbolClicked) {
     console.log("here!");
     if (currentState.calculateNum1 === "0") {
@@ -141,6 +156,22 @@ function handleSymbolClicked(event) {
   if (currentState.numericAfterSymbolClicked) {
     currentState.calculateNum2 = displayNumericInput.textContent;
     currentState.previousSymbol = currentState.currentSymbol;
+    if (currentState.previousSymbol === buttonValues["division"]) {
+      currentState.error = true;
+      handleDisplayExperssion();
+      currentState.calculateNum2 = "";
+      currentState.calculateNum1 = "0";
+      currentState.previousSymbol = "";
+      currentState.currentSymbol = "";
+      displayNumericInput.textContent = "";
+      currentState.decimalpointClicked = false;
+      currentState.equalClicked = false;
+      currentState.numericAfterSymbolClicked = false;
+      currentState.symbolClicked = false;
+      currentState.negateClicked = false;
+
+      return;
+    }
     console.log("i clickeddd");
     currentState.calculateNum1 = calculateExpression(
       currentState.calculateNum1,
@@ -156,6 +187,11 @@ function handleSymbolClicked(event) {
   handleDisplayExperssion();
 }
 function handleNumericClicked(event) {
+  if (currentState.error) {
+    currentState.error = false;
+    disPlayExpression.textContent = "";
+  }
+  currentState.equalClicked = false;
   const clickedNumber = buttonValues[`${event.target.id}`];
 
   if (event.target.id === "decimalpoint") {
@@ -173,12 +209,15 @@ function handleNumericClicked(event) {
     displayNumericInput.textContent = "";
     displayNumericInput.textContent = buttonValues[event.target.id];
     currentState.symbolClicked = false;
+
     return;
   }
   displayNum(clickedNumber, false, false);
   currentState.symbolClicked = false;
 }
 function handleModifyNumricClicked(event) {
+  currentState.equalClicked = false;
+
   if (event.target.id === "percent") {
     const percentage = Number(displayNumericInput.textContent) / 100;
     currentState.decimalpointClicked = false;
@@ -214,18 +253,6 @@ function handleModifyNumricClicked(event) {
       currentState.negateClicked = false;
     }
 
-    // displayNum(
-    //   (Number(displayNumericInput.textContent) * -1).toString(),
-    //   true,
-    //   false
-    // );
-
-    // if (!currentState.currentSymbol) {
-    //   console.log("idksldjlakj");
-    //   currentState.calculateNum1 = displayNumericInput.textContent;
-    // } else {
-    //   currentState.calculateNum2 = displayNumericInput.textContent;
-    // }
     currentState.decimalpointClicked = false;
     console.log(
       `num1:${currentState.calculateNum1},num2:${currentState.calculateNum2}`
@@ -237,10 +264,27 @@ function displayResult() {
   displayNumericInput.textContent = currentState.calculateNum1.toString();
 }
 function onClickEqual() {
+  currentState.equalClicked = true;
   if (currentState.currentSymbol) {
     currentState.calculateNum2 = currentState.calculateNum2
       ? currentState.calculateNum2
       : displayNumericInput.textContent;
+    if (currentState.currentSymbol === buttonValues["division"]) {
+      console.log("rttot!!");
+      currentState.error = true;
+      handleDisplayExperssion();
+      currentState.calculateNum2 = "";
+      currentState.calculateNum1 = "0";
+      currentState.previousSymbol = "";
+      currentState.currentSymbol = "";
+      displayNumericInput.textContent = "";
+      currentState.decimalpointClicked = false;
+      currentState.equalClicked = false;
+      currentState.numericAfterSymbolClicked = false;
+      currentState.symbolClicked = false;
+      currentState.negateClicked = false;
+      return;
+    }
     handleDisplayExperssion();
     currentState.calculateNum1 = calculateExpression(
       currentState.calculateNum1,
@@ -251,6 +295,7 @@ function onClickEqual() {
   } else {
     handleDisplayExperssion();
     currentState.calculateNum1 = displayNumericInput.textContent;
+    handleDisplayExperssion();
   }
 
   displayNum(currentState.calculateNum1, false, true);
@@ -286,4 +331,3 @@ Array.prototype.forEach.call(modifyNumericButtons, (button) => {
   button.addEventListener("click", handleModifyNumricClicked);
 });
 displayNum(currentState.calculateNum1, false, false);
-
